@@ -1,6 +1,6 @@
 from flask import render_template, url_for, flash, redirect, request
 from Main.models import Student, Faculty, Post
-from Main.forms import LoginForm, AddUser, UpdateAccountForm, PostForm
+from Main.forms import LoginForm, AddUser, UpdateAccountForm, PostForm, AddFaculties
 from Main import app, db, bcrypt
 from flask_login import login_user, current_user, logout_user, login_required
 import secrets, os
@@ -19,7 +19,7 @@ def about():
 @app.route("/studentlogin", methods=['GET', 'POST'])
 def studentlogin():
     # if current_user.is_authenticated:
-    #     return redirect(url_for('facultylogin'))
+     #    return redirect(url_for('facultylogin'))
     form = LoginForm()
     if form.validate_on_submit():
         student = Student.query.filter_by(id = form.id.data).first()
@@ -30,15 +30,23 @@ def studentlogin():
             return redirect(next_page) if next_page else redirect(url_for('studenthome'))
         else:
             flash('Login Unsuccessful. Please check id and password', 'danger')
-    return render_template('login.html', title='Login', form=form)
+    return render_template('studentlogin.html', title='Login', form=form)
 
-@app.route('/facultylogin', methods = ['GET', 'POST'])
+@app.route("/facultylogin", methods=['GET', 'POST'])
 def facultylogin():
+     #if current_user.is_authenticated:
+     #    return redirect(url_for('facultylogin'))
     form = LoginForm()
     if form.validate_on_submit():
-
-        flash('Login Unsuccessful. Please check id and password', 'danger')
+        faculty = Faculty.query.filter_by(id = form.id.data).first()
+        if faculty and bcrypt.check_password_hash(faculty.password, form.password.data):
+            login_user(faculty, remember=form.remember.data)
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('facultyhome'))
+        else:
+            flash('Login Unsuccessful. Please check id and password', 'danger')
     return render_template('facultylogin.html', title='Login', form=form)
+
 
 @app.route('/studenthome')
 def studenthome():
@@ -49,15 +57,38 @@ def facultyhome():
     return render_template('facultyhome.html')
 
 
-@app.route('/adduser', methods = ['GET', 'POST'])
-def AddMember():
+@app.route('/add/student', methods = ['GET', 'POST'])
+def AddStudent():
     form = AddUser()
     if form.validate_on_submit():
-        student = Student(name = form.name.data, id = form.id.data, password = bcrypt.generate_password_hash(form.name.data + str(form.id.data % 100)).decode('utf-8'))
+        student = Student(name = form.name.data, id = form.id.data, password = bcrypt.generate_password_hash
+                                                                                    (form.name.data + str(form.id.data % 100)).decode('utf-8'))
         db.session.add(student)
         db.session.commit()
-
+        flash('Student added!', category="success")
+        form.id.data = None
+        form.name.data = None
+        #next_page = request.args.get('next')
+        #return redirect(next_page) if next_page else redirect(url_for('home'))
     return render_template('adduser.html', form = form)
+
+
+@app.route('/add/faculty', methods = ['GET', 'POST'])
+def AddFaculty():
+    form = AddFaculties()
+    if form.validate_on_submit():
+        faculty = Faculty( id = form.id.data, course = form.course.data, password = bcrypt.generate_password_hash
+                                                                                    (str(form.id.data) ).decode('utf-8'))
+        db.session.add(faculty)
+        db.session.commit()
+        flash('Faculty added!', category="success")
+        form.id.data = None
+        form.course.data = None
+        #next_page = request.args.get('next')
+        #return redirect(next_page) if next_page else redirect(url_for('home'))
+    return render_template('addfaculty.html', form = form)
+
+
 
 @app.route('/logout')
 def logout():

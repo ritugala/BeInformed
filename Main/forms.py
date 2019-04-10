@@ -28,6 +28,18 @@ class AddUser(FlaskForm):
             raise ValidationError("This ID is taken choose another one")
 
 
+class AddFaculties(FlaskForm):
+
+    id = IntegerField('ID', validators=[DataRequired()])
+    #name = StringField('Name', validators=[DataRequired()])
+    course = StringField('Course', validators=[DataRequired()])
+    submit = SubmitField("Submit")
+    def validate_id(self, id):
+        faculty = Faculty.query.filter_by(id = id.data).first()
+        if faculty:
+            raise ValidationError("This ID is taken choose another one")
+
+
 class UpdateAccountForm(FlaskForm):
 
     name = StringField('Name', validators=[])
