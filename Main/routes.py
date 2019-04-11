@@ -1,6 +1,6 @@
 from flask import render_template, url_for, flash, redirect, request
 from Main.models import Student, Faculty, Post
-from Main.forms import LoginForm, AddUser, UpdateAccountForm, PostForm, AddFaculties
+from Main.forms import LoginForm, AddStudents, UpdateAccountForm, PostForm, AddFaculties
 from Main import app, db, bcrypt
 from flask_login import login_user, current_user, logout_user, login_required
 import secrets, os
@@ -59,9 +59,9 @@ def facultyhome():
 
 @app.route('/add/student', methods = ['GET', 'POST'])
 def AddStudent():
-    form = AddUser()
+    form = AddStudents()
     if form.validate_on_submit():
-        student = Student(name = form.name.data, id = form.id.data, password = bcrypt.generate_password_hash
+        student = Student(name = form.name.data, id = form.id.data, email = form.email.data, password = bcrypt.generate_password_hash
                                                                                     (form.name.data + str(form.id.data % 100)).decode('utf-8'))
         db.session.add(student)
         db.session.commit()
@@ -70,6 +70,8 @@ def AddStudent():
         form.name.data = None
         #next_page = request.args.get('next')
         #return redirect(next_page) if next_page else redirect(url_for('home'))
+    else:
+        flash('Student couldnt be added', category='success')
     return render_template('adduser.html', form = form)
 
 
@@ -77,15 +79,19 @@ def AddStudent():
 def AddFaculty():
     form = AddFaculties()
     if form.validate_on_submit():
-        faculty = Faculty( id = form.id.data, course = form.course.data, password = bcrypt.generate_password_hash
+        faculty = Faculty( id = form.id.data, course = form.course.data, name = form.name.data, email = form.email.data, password = bcrypt.generate_password_hash
                                                                                     (str(form.id.data) ).decode('utf-8'))
         db.session.add(faculty)
         db.session.commit()
         flash('Faculty added!', category="success")
         form.id.data = None
         form.course.data = None
+        form.name.data = None
+        form.email.data = None
         #next_page = request.args.get('next')
         #return redirect(next_page) if next_page else redirect(url_for('home'))
+    else:
+        flash('Faculty couldnt be added', category='danger')
     return render_template('addfaculty.html', form = form)
 
 
@@ -183,3 +189,5 @@ def delete_post(post_id):
     db.session.commit()
     flash('Your post has been deleted!', 'success')
     return redirect(url_for('facultyhome'))
+
+
